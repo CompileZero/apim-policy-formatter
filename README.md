@@ -20,6 +20,20 @@ either.
   preserves `CDATA` blocks and multi-line C# script blocks as-is, and is
   quote-aware so it won't get confused by a `>` inside a condition like
   `context.Response.StatusCode > 400`.
+- **Live C# expression diagnostics** (red squiggles, updates as you type):
+  every `@(...)` and `@{...}` in the file is checked for structural problems:
+  - Unclosed or mismatched brackets.
+  - Unterminated string literals.
+  - Stray leftover characters after an expression closes (e.g. an extra `)`).
+  - The classic APIM footgun: a C# string using the **same quote character**
+    as the surrounding XML attribute (e.g. `value="@(x.GetValueOrDefault("a",""))"`),
+    which silently truncates the attribute instead of doing what you meant.
+    Fix: use the other quote character for C# strings inside a double-quoted
+    attribute, or escape as `&quot;`/`&apos;`.
+
+  This is a structural/lexical checker, not a real C# compiler — it won't
+  catch type errors or unknown members. For that, see the note on the policy
+  toolkit below.
 - **Snippets**: `apim-choose`, `apim-set-header`, `apim-set-variable`,
   `apim-set-body`, `apim-rate-limit`, `apim-cache`, `apim-validate-jwt`,
   `apim-send-request`, `apim-retry`, `apim-cors`.

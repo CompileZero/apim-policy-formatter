@@ -1,4 +1,5 @@
 const vscode = require('vscode');
+const { checkDocument } = require('./csharpCheck');
 
 // --- Formatter core -------------------------------------------------------
 // Quote-aware tokenizer: a "<when condition="@(a > b)">" tag contains a bare
@@ -134,7 +135,49 @@ function buildEdits(document) {
   return [vscode.TextEdit.replace(fullRange, formatted)];
 }
 
+// --- C# expression syntax diagnostics -------------------------------------
+const diagnostics = vscode.languages.createDiagnosticCollection('apim-policy-csharp');
+const debounceTimers = new Map();
+
+function runDiagnostics(document) {
+  if (document.languageId !== 'xml') return;
+  const text = document.getText();
+  const errors = checkDocument(text);
+  const diags = errors.map((e) => {
+    const start = document.positionAt(e.offset);
+    const end = document.positionAt(e.offset + Math.max(1, e.length));
+    const d = new vscode.Diagnostic(
+      new vscode.Range(start, end),
+      e.message,
+      vscode.DiagnosticSeverity.Error
+    );
+    d.source = 'APIM Policy Tools';
+    return d;
+  });
+  diagnostics.set(document.uri, diags);
+}
+
+function scheduleDiagnostics(document) {
+  const key = document.uri.toString();
+  clearTimeout(debounceTimers.get(key));
+  debounceTimers.set(
+    key,
+    setTimeout(() => runDiagnostics(document), 250)
+  );
+}
+
 function activate(context) {
+  context.subscriptions.push(diagnostics);
+
+  for (const doc of vscode.workspace.textDocuments) {
+    scheduleDiagnostics(doc);
+  }
+  context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(scheduleDiagnostics));
+  context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((e) => scheduleDiagnostics(e.document)));
+  context.subscriptions.push(
+    vscode.workspace.onDidCloseTextDocument((doc) => diagnostics.delete(doc.uri))
+  );
+
   context.subscriptions.push(
     vscode.languages.registerDocumentFormattingEditProvider(
       { language: 'xml' },
