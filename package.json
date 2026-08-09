@@ -1,0 +1,44 @@
+{
+  "name": "apim-policy-tools",
+  "displayName": "APIM Policy Tools",
+  "description": "Syntax highlighting and a formatter for Azure API Management policy XML, including the embedded C# expressions.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.70.0"
+  },
+  "categories": ["Programming Languages", "Formatters"],
+  "activationEvents": [
+    "onLanguage:xml"
+  ],
+  "main": "./src/extension.js",
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "apim.policy.injection",
+        "path": "./syntaxes/apim-policy.injection.json",
+        "injectTo": ["text.xml"]
+      }
+    ],
+    "snippets": [
+      {
+        "language": "xml",
+        "path": "./snippets/apim-policy.code-snippets"
+      }
+    ],
+    "commands": [
+      {
+        "command": "apimPolicy.format",
+        "title": "Format APIM Policy XML"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "apimPolicy.format",
+        "key": "ctrl+alt+f",
+        "mac": "cmd+alt+f",
+        "when": "editorTextFocus && editorLangId == xml"
+      }
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "APIM: choose/when/otherwise": {
+    "prefix": "apim-choose",
+    "body": [
+      "<choose>",
+      "\t<when condition=\"@(${1:context.Request.Headers.GetValueOrDefault(\"X-Test\",\"\")} == \"${2:value}\")\">",
+      "\t\t${3:<!-- when true -->}",
+      "\t</when>",
+      "\t<otherwise>",
+      "\t\t${4:<!-- otherwise -->}",
+      "\t</otherwise>",
+      "</choose>"
+    ],
+    "description": "APIM choose/when/otherwise block"
+  },
+  "APIM: set-header": {
+    "prefix": "apim-set-header",
+    "body": [
+      "<set-header name=\"${1:header-name}\" exists-action=\"${2|override,skip,append,delete|}\">",
+      "\t<value>${3:value}</value>",
+      "</set-header>"
+    ],
+    "description": "APIM set-header policy"
+  },
+  "APIM: set-variable": {
+    "prefix": "apim-set-variable",
+    "body": [
+      "<set-variable name=\"${1:varName}\" value=\"@(${2:context.Request.Headers.GetValueOrDefault(\"X-Test\",\"\")})\" />"
+    ],
+    "description": "APIM set-variable policy"
+  },
+  "APIM: set-body (C# expression)": {
+    "prefix": "apim-set-body",
+    "body": [
+      "<set-body>@{",
+      "\treturn ${1:context.Request.Body.As<string>(preserveContent: true)};",
+      "}</set-body>"
+    ],
+    "description": "APIM set-body with inline C# block"
+  },
+  "APIM: rate-limit-by-key": {
+    "prefix": "apim-rate-limit",
+    "body": [
+      "<rate-limit-by-key calls=\"${1:10}\" renewal-period=\"${2:60}\" counter-key=\"@(${3:context.Subscription.Id})\" />"
+    ],
+    "description": "APIM rate-limit-by-key policy"
+  },
+  "APIM: cache-lookup-value / cache-store-value": {
+    "prefix": "apim-cache",
+    "body": [
+      "<cache-lookup-value key=\"@(\"${1:cache-key-}\" + ${2:context.Request.MatchedParameters[\"id\"]})\" variable-name=\"${3:cachedValue}\" />",
+      "<choose>",
+      "\t<when condition=\"@(!context.Variables.ContainsKey(\"${3:cachedValue}\"))\">",
+      "\t\t${4:<!-- fetch and then cache-store-value -->}",
+      "\t\t<cache-store-value key=\"@(\"${1:cache-key-}\" + ${2:context.Request.MatchedParameters[\"id\"]})\" value=\"@(${5:valueToCache})\" duration=\"${6:300}\" />",
+      "\t</when>",
+      "</choose>"
+    ],
+    "description": "APIM cache-lookup-value / cache-store-value pattern"
+  },
+  "APIM: validate-jwt": {
+    "prefix": "apim-validate-jwt",
+    "body": [
+      "<validate-jwt header-name=\"Authorization\" failed-validation-httpcode=\"401\" require-scheme=\"Bearer\">",
+      "\t<openid-config url=\"${1:https://login.microsoftonline.com/tenant-id/.well-known/openid-configuration}\" />",
+      "\t<audiences>",
+      "\t\t<audience>${2:api://your-api-id}</audience>",
+      "\t</audiences>",
+      "</validate-jwt>"
+    ],
+    "description": "APIM validate-jwt policy"
+  },
+  "APIM: send-request": {
+    "prefix": "apim-send-request",
+    "body": [
+      "<send-request mode=\"new\" response-variable-name=\"${1:response}\" timeout=\"${2:20}\" ignore-error=\"${3:false}\">",
+      "\t<set-url>${4:https://example.com/api}</set-url>",
+      "\t<set-method>${5|GET,POST,PUT,DELETE,PATCH|}</set-method>",
+      "</send-request>"
+    ],
+    "description": "APIM send-request policy"
+  },
+  "APIM: retry": {
+    "prefix": "apim-retry",
+    "body": [
+      "<retry condition=\"@(${1:context.Response.StatusCode} == 429)\" count=\"${2:3}\" interval=\"${3:1}\" max-interval=\"${4:10}\" delta=\"${5:1}\" first-fast-retry=\"true\">",
+      "\t${6:<!-- retried policy -->}",
+      "</retry>"
+    ],
+    "description": "APIM retry policy"
+  },
+  "APIM: cors": {
+    "prefix": "apim-cors",
+    "body": [
+      "<cors allow-credentials=\"${1:false}\">",
+      "\t<allowed-origins>",
+      "\t\t<origin>${2:*}</origin>",
+      "\t</allowed-origins>",
+      "\t<allowed-methods>",
+      "\t\t<method>GET</method>",
+      "\t\t<method>POST</method>",
+      "\t</allowed-methods>",
+      "\t<allowed-headers>",
+      "\t\t<header>*</header>",
+      "\t</allowed-headers>",
+      "</cors>"
+    ],
+    "description": "APIM cors policy"
+  }
+}
